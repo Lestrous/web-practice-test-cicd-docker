@@ -1,4 +1,4 @@
-export default mongoose => {
+export default (mongoose) => {
     const UserSchema = mongoose.Schema({
         login: {
             type: String,
@@ -11,4 +11,4 @@ export default mongoose => {
     });
 
     return mongoose.model('User', UserSchema);
-}
+};
