@@ -19,8 +19,14 @@
   "author": "Shtol Leonid",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.20.0",
+    "busboy": "^1.5.0",
+    "busboy-body-parser": "^0.3.2",
     "express": "^4.17.1",
-    "mongoose": "^6.0.13"
+    "mongoose": "^6.0.13",
+    "pug": "^3.0.2",
+    "request": "^2.88.2",
+    "zombie": "^6.1.4"
   },
   "devDependencies": {
     "eslint": "^8.13.0",
