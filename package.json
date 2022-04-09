@@ -9,8 +9,7 @@
     "nodemon": "nodemon .",
     "eslint": "eslint ./",
     "eslint:fix": "eslint ./ --fix --color",
-    "test": "npm run eslint",
-    "serve": "serve"
+    "test": "npm run eslint"
   },
   "engines": {
     "node": "16.13.1",
