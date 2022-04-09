@@ -1,18 +1,30 @@
 import express from 'express';
+import bodyParser from 'body-parser';
+import { createReadStream } from 'fs';
+import crypto from 'crypto';
+import http from 'http';
 import mongoose from 'mongoose';
-import TermModel from './models/Term.js';
+import request from 'request';
+import pug from 'pug';
+import zombie from 'zombie';
+// eslint-disable-next-line import/extensions
+import UserModel from './models/User.js';
+// eslint-disable-next-line import/extensions
 import appSrc from './app.js';
 
-const Term = TermModel(mongoose);
+const User = UserModel(mongoose);
 
-const DBURL = 'mongodb+srv://glossary_reader:glossary_reader@cluster0.n7zyl.mongodb.net/mongodemo?retryWrites=true&w=majority';
+const app = appSrc(
+    express,
+    bodyParser,
+    createReadStream,
+    crypto,
+    http,
+    mongoose,
+    User,
+    request,
+    pug,
+    zombie,
+);
 
-try {
-    await mongoose.connect(DBURL, { useNewUrlParser: true, useUnifiedTopology: true });
-
-    const app = appSrc(express, mongoose, Term);
-
-    app.listen(process.env.PORT ?? 3000);
-} catch (e) {
-    console.log(e.codeName);
-}
+app.listen(process.env.PORT ?? 4321);

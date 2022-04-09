@@ -1,4 +1,4 @@
-export default (express, mongoose, Term) => {
+export default (express, bodyParser, createReadStream, crypto, http, mongoose, User, request, pug, Zombie) => {
     const app = express();
 
     const CORS = {
@@ -7,101 +7,103 @@ export default (express, mongoose, Term) => {
         'Access-Control-Allow-Headers': 'Content-Type,Accept,Access-Control-Allow-Headers',
     };
 
-    const styles = `
-        <style>
-            body {
-                background-color: lightyellow;
-                width: 50%;
-                margin: 0 auto;
-                font-family: Arial, serif;
-            }
-            
-            h1 {
-                text-align: center;
-            }
-            
-            .link {
-                display: block;
-                margin-bottom: 10px;
-                padding: 10px;
-                background-color: #f9bcdd;
-                border-radius: 8px;
-                font-size: 16px;
-                text-decoration: none;
-                color: darkblue;
-            }
-            
-            .description {
-                padding: 10px;
-                text-indent: 1.5em;
-                text-align: justify;
-                line-height: 1.5;
-            }
-        </style>
-    `;
-
     app
         .use((r, res, next) => { r.res.set(CORS); next(); })
+        .use(bodyParser.urlencoded({ extended: true }))
+        .use(bodyParser.json())
 
-        .get('/', async (req, res) => {
-            const terms = await Term.find();
+        .get('/login/', (req, res) => res
+            .send('day108'))
+        .get('/code/', (req, res) => {
+            const fileSrc = import.meta.url.substring(import.meta.url.length - 6);
 
-            let layout = `
-                <!DOCTYPE html>
-                <html lang="ru">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Глоссарий</title>
-                    ${styles}
-                </head>
-                <body>
-                    <h1>Глоссарий</h1>
-                    <div>
-            `;
-
-            terms.forEach((term) => {
-                layout += `
-                    <a class="link" href="/${term.name}">${term.title}</a>
-                `;
-            });
-
-            layout += `
-                    </div>
-                </body>
-                </html>
-            `;
-
-            res.send(layout);
+            res.set({ 'Content-Type': 'text/plain; charset=UTF-8' });
+            createReadStream(fileSrc).pipe(res);
         })
-        .get('/:name', async (req, res) => {
-            const { name } = req.params;
+        .get('/sha1/:input', (req, res) => {
+            const hash = crypto.createHash('sha1');
+            hash.update(req.params.input);
 
-            const termInfo = await Term.find({ name });
+            res.send(hash.digest('hex'));
+        })
+        .all('/req/', (req, res) => {
+            const addr = req.method === 'POST' ? req.body.addr : req.query.addr;
 
-            if (termInfo.length > 0) {
-                res.send(`<!DOCTYPE html>
-                    <html lang="ru">
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>${termInfo[0].title}</title>
-                        ${styles}
-                    </head>
-                    <body>
-                        <div>
-                            <h1>${termInfo[0].title}</h1>
-                            <p class="description">${termInfo[0].description}</p>
-                            <br>
-                            <a class="link" href="/">На главную</a>
-                        </div>
-                    </body>
-                    </html>
-                `);
-            } else {
-                res.send('Нет такого термина');
+            http.get(addr, (httpRes, str = '') => {
+                httpRes
+                    .on('data', (data) => str += data)
+                    .on('end', () => res.send(str));
+            });
+        })
+        .post('/insert/', async (req, res) => {
+            const { login, password, URL } = req.body;
+            try {
+                await mongoose.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true });
+            } catch (e) {
+                res.send(e.codeName);
+            }
+
+            const newUser = new User({ login, password });
+
+            try {
+                await newUser.save();
+                res.status(201).json({ login });
+            } catch (e) {
+                console.log('Error');
             }
         })
+        .all('/wordpress/', async (req, res) => {
+            request.get('https://shtol-leonid.ru', (err, response, body) => {
+                if (!err) {
+                    res.send(body);
+                }
+            });
+        })
+        .all('/wordpress/wp-json/wp/v2/', async (req, res) => {
+            request.get('https://shtol-leonid.ru/wp-json/wp/v2/', (err, response, body) => {
+                if (!err) {
+                    res.json(JSON.parse(body));
+                }
+            });
+        })
+        .all('/wordpress/wp-json/wp/v2/posts/', async (req, res) => {
+            request.get('https://shtol-leonid.ru/wp-json/wp/v2/posts/', (err, response, body) => {
+                if (!err) {
+                    res.json(JSON.parse(body));
+                }
+            });
+        })
+        .all('/wordpress/wp-json/wp/v2/posts/:id(\\d+)', async (req, res) => {
+            request.get(`https://shtol-leonid.ru/wp-json/wp/v2/posts/${req.params.id}`, (err, response, body) => {
+                if (!err) {
+                    res.json(JSON.parse(body));
+                }
+            });
+        })
+        .post('/render/', (req, res) => {
+            const { addr } = req.query;
+            const { random2, random3 } = req.body;
+
+            request.get(addr, (err, response, body) => {
+                if (!err) {
+                    res.send(pug.render(body, { random2, random3 }));
+                }
+            });
+        })
+        .get('/test/', async (req, res) => {
+            const { URL } = req.query;
+
+            const page = new Zombie();
+
+            await page.visit(URL);
+            await page.pressButton('#bt');
+            const got = await page.document.querySelector('#inp').value;
+
+            res.set({ 'Content-Type': 'text/plain; charset=UTF-8' });
+            res.send(got);
+        })
         .all('/*', (req, res) => res
-            .send('Shtol Leonid'));
+            .send('day108'));
 
     return app;
 };
