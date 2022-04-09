@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import TermModel from './models/Term';
-import appSrc from './app';
+import TermModel from './models/Term.js';
+import appSrc from './app.js';
 
 const Term = TermModel(mongoose);
 
