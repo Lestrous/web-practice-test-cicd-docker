@@ -1,4 +1,15 @@
-export default (express, bodyParser, createReadStream, crypto, http, mongoose, User, request, pug, Zombie) => {
+export default (
+    express,
+    bodyParser,
+    createReadStream,
+    crypto,
+    http,
+    mongoose,
+    User,
+    request,
+    pug,
+    Zombie,
+) => {
     const app = express();
 
     const CORS = {
@@ -31,7 +42,10 @@ export default (express, bodyParser, createReadStream, crypto, http, mongoose, U
 
             http.get(addr, (httpRes, str = '') => {
                 httpRes
-                    .on('data', (data) => str += data)
+                    .on('data', (data) => {
+                        // eslint-disable-next-line no-param-reassign
+                        str += data;
+                    })
                     .on('end', () => res.send(str));
             });
         })
@@ -49,6 +63,7 @@ export default (express, bodyParser, createReadStream, crypto, http, mongoose, U
                 await newUser.save();
                 res.status(201).json({ login });
             } catch (e) {
+                // eslint-disable-next-line no-console
                 console.log('Error');
             }
         })
